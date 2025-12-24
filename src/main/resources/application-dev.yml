@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: gateway
+
+jwt:
+  public-key-path: classpath:public_key.pem

@@ -8,12 +8,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
 import jakarta.annotation.PostConstruct;
+
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -34,9 +36,9 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
     private final Resource publicKeyResource;
     private PublicKey publicKey;
 
-    public AuthorizationHeaderFilter(@Value("classpath:public_key.pem") Resource publicKeyResource) {
+    public AuthorizationHeaderFilter(ResourceLoader resourceLoader, @Value("${jwt.public-key-path}") String publicKeyPath) {
         super(Config.class);
-        this.publicKeyResource = publicKeyResource;
+        this.publicKeyResource = resourceLoader.getResource(publicKeyPath);
     }
 
     public static class Config {
