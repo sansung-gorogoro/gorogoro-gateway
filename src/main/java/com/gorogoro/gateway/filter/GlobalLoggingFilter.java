@@ -3,50 +3,41 @@ package com.gorogoro.gateway.filter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.core.annotation.Order;
+import org.springframework.core.Ordered;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
-@Order(-1)
-public class GlobalLoggingFilter implements GlobalFilter {
+public class GlobalLoggingFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         long startTime = System.currentTimeMillis();
+        ServerHttpRequest request = exchange.getRequest();
 
-        // 요청 로깅
-        log.info("╔════════════════════════════════════════════════════════════════");
-        log.info("║ 📨 REQUEST");
-        log.info("╠════════════════════════════════════════════════════════════════");
-        log.info("║ Method: {}", exchange.getRequest().getMethod());
-        log.info("║ URI: {}", exchange.getRequest().getURI());
-        log.info("║ Path: {}", exchange.getRequest().getPath());
-        log.info("║ Remote Address: {}", exchange.getRequest().getRemoteAddress());
-        log.info("║ Headers:");
-        exchange.getRequest().getHeaders().forEach((name, values) -> {
-            log.info("║   {}: {}", name, String.join(", ", values));
-        });
-        log.info("╚════════════════════════════════════════════════════════════════");
+        // Gateway가 생성한 고유 Request ID (로그 추적의 핵심)
+        String requestId = request.getId();
 
-        // 응답 처리 및 로깅
-        return chain.filter(exchange).doFinally(signal -> {
+        // [요청 로그] ID, Method, URI (헤더 제외: 보안 및 가독성)
+        log.info("[REQ] [{}] {} {}", requestId, request.getMethod(), request.getURI());
+
+        // 비동기 처리 후 응답 로그 출력
+        return chain.filter(exchange).then(Mono.fromRunnable(() -> {
             long duration = System.currentTimeMillis() - startTime;
+            ServerHttpResponse response = exchange.getResponse();
 
-            log.info("╔════════════════════════════════════════════════════════════════");
-            log.info("║ 📤 RESPONSE");
-            log.info("╠════════════════════════════════════════════════════════════════");
-            log.info("║ Status: {}", exchange.getResponse().getStatusCode());
-            log.info("║ Duration: {}ms", duration);
-            log.info("║ Signal: {}", signal);
-            log.info("║ Headers:");
-            exchange.getResponse().getHeaders().forEach((name, values) -> {
-                log.info("║   {}: {}", name, String.join(", ", values));
-            });
-            log.info("╚════════════════════════════════════════════════════════════════");
-        });
+            // [응답 로그] ID, Status, 소요 시간
+            log.info("[RES] [{}] Status: {} ({}ms)", requestId, response.getStatusCode(), duration);
+        }));
+    }
+
+    @Override
+    public int getOrder() {
+        return -1;
     }
 }
 

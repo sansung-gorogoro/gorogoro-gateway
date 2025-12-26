@@ -4,6 +4,7 @@ import com.gorogoro.gateway.exception.BaseException;
 import com.gorogoro.gateway.exception.code.GatewayErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
@@ -14,7 +15,6 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
-import jakarta.annotation.PostConstruct;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
@@ -23,7 +23,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 @Component
-public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<AuthorizationHeaderFilter.Config> {
+public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<AuthorizationHeaderFilter.Config > {
     private static final String ALGORITHM = "RSA";
     private static final String ROLE_KEY = "role";
     private static final String UNKNOWN_ROLE = "UNKNOWN";
