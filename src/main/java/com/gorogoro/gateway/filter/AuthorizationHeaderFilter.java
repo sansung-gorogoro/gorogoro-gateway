@@ -4,66 +4,53 @@ import com.gorogoro.gateway.exception.BaseException;
 import com.gorogoro.gateway.exception.code.GatewayErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StreamUtils;
 
-
-import java.nio.charset.StandardCharsets;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.stream.Collectors;
 
 @Component
-public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<AuthorizationHeaderFilter.Config > {
-    private static final String ALGORITHM = "RSA";
+public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<AuthorizationHeaderFilter.Config> {
     private static final String ROLE_KEY = "role";
-    private static final String UNKNOWN_ROLE = "UNKNOWN";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String HEADER_USER_ID = "X-User-Id";
     private static final String HEADER_USER_ROLE = "X-User-Role";
-    private static final String KEY_HEADER = "-----BEGIN PUBLIC KEY-----";
-    private static final String KEY_FOOTER = "-----END PUBLIC KEY-----";
+    private final PublicKey publicKey;
 
-    private final Resource publicKeyResource;
-    private PublicKey publicKey;
-
-    public AuthorizationHeaderFilter(ResourceLoader resourceLoader, @Value("${jwt.public-key-path}") String publicKeyPath) {
+    public AuthorizationHeaderFilter(
+            @Value("classpath:public_key.pem") Resource publicKeyResource) {
         super(Config.class);
-        this.publicKeyResource = resourceLoader.getResource(publicKeyPath);
+        this.publicKey = loadPublicKey(publicKeyResource);
     }
 
     public static class Config {
     }
 
-    @PostConstruct
-    private void loadPublicKey() {
-        try {
-            // 파일 읽기
-            String publicKeyString = StreamUtils.copyToString(publicKeyResource.getInputStream(), StandardCharsets.UTF_8);
+    private PublicKey loadPublicKey(Resource resource) {
+        try (InputStream inputStream = resource.getInputStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String keyData = reader.lines()
+                    .filter(line -> !line.startsWith("-----BEGIN") && !line.startsWith("-----END"))
+                    .collect(Collectors.joining());
 
-            // 헤더, 푸터, 공백 제거
-            String publicKey = publicKeyString
-                    .replace(KEY_HEADER, "")
-                    .replace(KEY_FOOTER, "")
-                    .replaceAll("\\s", "");
-
-            // Base64 디코딩 및 PublicKey 객체 생성
-            byte[] encoded = Base64.getDecoder().decode(publicKey);
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
-            this.publicKey = KeyFactory.getInstance(ALGORITHM).generatePublic(keySpec);
-
-            System.out.println("공개키 로딩 완료");
+            byte[] decodedKey = Base64.getDecoder().decode(keyData);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKey);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            return keyFactory.generatePublic(keySpec);
         } catch (Exception e) {
-            throw new RuntimeException("공개키를 로드하는 데 실패했습니다.", e);
+            throw new BaseException(GatewayErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -89,15 +76,13 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
             try {
                 // 공개 키를 사용하여 토큰이 변조 여부 검증 및 파싱
                 Claims claims = Jwts.parser()
-                        .verifyWith(getPublicKey())
+                        .verifyWith(publicKey)
                         .build()
                         .parseSignedClaims(token)
                         .getPayload();
 
                 String userId = claims.getSubject();
-                String role = claims.get(ROLE_KEY, String.class) != null
-                        ? claims.get(ROLE_KEY, String.class)
-                        : UNKNOWN_ROLE;
+                String role = claims.get(ROLE_KEY, String.class);
 
                 ServerHttpRequest newRequest = serverHttpRequest.mutate()
                         .headers(header -> {
@@ -112,13 +97,5 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
                 throw new BaseException(GatewayErrorCode.UNAUTHORIZED_ACCESS);
             }
         };
-    }
-
-    private PublicKey getPublicKey() {
-        if (this.publicKey == null) {
-            throw new RuntimeException("공개키가 초기화되지 않았습니다.");
-        }
-
-        return this.publicKey;
     }
 }
