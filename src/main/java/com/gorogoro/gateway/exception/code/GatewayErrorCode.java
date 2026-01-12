@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum GatewayErrorCode implements ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "GTW-0001", "유효하지 않은 토큰입니다."),
-    EMPTY_TOKEN(HttpStatus.UNAUTHORIZED, "GTW-0002", "유효하지 않은 토큰입니다."),
+    EMPTY_TOKEN(HttpStatus.UNAUTHORIZED, "GTW-0002", "비어있는 토큰입니다."),
     UNAUTHORIZED_ACCESS(HttpStatus.UNAUTHORIZED, "GTW-0003", "접근 권한이 없습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GTW-0004", "서버 내부 오류가 발생했습니다."),
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "GTW-0005", "잘못된 요청입니다."),
