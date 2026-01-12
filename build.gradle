@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.4.2'
+    id 'org.springframework.boot' version '3.4.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -19,12 +19,18 @@ repositories {
 }
 
 ext {
-    set('springCloudVersion', "2024.0.1")
+    set('springCloudVersion', "2024.0.0")
 }
 
 dependencies {
+    // WebFlux Starter
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
     // Spring Cloud Gateway
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
+
+    // Actuator (모니터링)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
@@ -37,6 +43,7 @@ dependencies {
 
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
 }
 
 dependencyManagement {
@@ -48,4 +55,3 @@ dependencyManagement {
 test {
     useJUnitPlatform()
 }
-
