@@ -94,7 +94,7 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
 
                 return chain.filter(exchange.mutate().request(newRequest).build());
             } catch (Exception e) {
-                throw new BaseException(GatewayErrorCode.UNAUTHORIZED_ACCESS);
+                throw new BaseException(GatewayErrorCode.UNAUTHORIZED_ACCESS, e);
             }
         };
     }
