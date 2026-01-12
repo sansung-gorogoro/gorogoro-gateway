@@ -3,6 +3,7 @@ package com.gorogoro.gateway.filter;
 import com.gorogoro.gateway.exception.BaseException;
 import com.gorogoro.gateway.exception.code.GatewayErrorCode;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
@@ -93,6 +94,8 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
                         .build();
 
                 return chain.filter(exchange.mutate().request(newRequest).build());
+            } catch (ExpiredJwtException e) {
+                throw new BaseException(GatewayErrorCode.TOKEN_EXPIRED, e);
             } catch (Exception e) {
                 throw new BaseException(GatewayErrorCode.UNAUTHORIZED_ACCESS, e);
             }

@@ -14,7 +14,8 @@ public enum GatewayErrorCode implements ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GTW-0004", "서버 내부 오류가 발생했습니다."),
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "GTW-0005", "잘못된 요청입니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "GTW-0006", "존재하지 않는 경로입니다."),
-    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "GTW-0007", "허용되지 않은 HTTP 메서드입니다.");
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "GTW-0007", "허용되지 않은 HTTP 메서드입니다."),
+    TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "GTW-0008", "토큰이 만료되었습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
