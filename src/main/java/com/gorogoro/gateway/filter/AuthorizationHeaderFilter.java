@@ -88,8 +88,8 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
                 ServerHttpRequest newRequest = serverHttpRequest.mutate()
                         .headers(header -> {
                             header.remove(HttpHeaders.AUTHORIZATION);
-                            header.add(HEADER_USER_ID, userId);
-                            header.add(HEADER_USER_ROLE, role);
+                            header.set(HEADER_USER_ID, userId);
+                            header.set(HEADER_USER_ROLE, role);
                         })
                         .build();
 
